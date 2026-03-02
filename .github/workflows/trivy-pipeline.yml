@@ -12,6 +12,13 @@ jobs:
       # 1. Pull your code into the GitHub runner
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarQube Cloud Scan
+        uses: SonarSource/sonarqube-scan-action@v6 # Updated to v6 as per their docs
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # 2. Build your FastAPI Docker image (just like you did locally)
       - name: Build Docker Image
