@@ -31,8 +31,8 @@ jobs:
           image-ref: 'vuln_app:latest'
           format: 'json'
           output: 'trivy-results.json'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: false
+          severity: 'LOW,MEDIUM,CRITICAL,HIGH'
 
       # 4. The Magic Handoff: Send the file to your local backend
       - name: Stream Results to Local Backend
