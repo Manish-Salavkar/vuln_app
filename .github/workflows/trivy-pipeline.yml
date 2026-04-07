@@ -34,21 +34,29 @@ jobs:
           ignore-unfixed: false
           severity: 'LOW,MEDIUM,CRITICAL,HIGH'
 
-      # 5. Inject Pipeline Metadata (CRITICAL STEP)
+      # 5. Inject Pipeline Metadata
       - name: Add Pipeline Metadata to Trivy JSON
         run: |
-          jq '. + {
-            pipeline: {
-              run_id: "'$GITHUB_RUN_ID'",
-              run_number: "'$GITHUB_RUN_NUMBER'",
-              workflow: "'$GITHUB_WORKFLOW'",
-              repo: "'$GITHUB_REPOSITORY'",
-              branch: "'$GITHUB_REF_NAME'",
-              commit_sha: "'$GITHUB_SHA'",
-              actor: "'$GITHUB_ACTOR'"
-            },
-            scan_type: "trivy"
-          }' trivy-results.json > final-trivy.json
+          jq \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --arg run_number "$GITHUB_RUN_NUMBER" \
+            --arg workflow "$GITHUB_WORKFLOW" \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --arg branch "$GITHUB_REF_NAME" \
+            --arg commit_sha "$GITHUB_SHA" \
+            --arg actor "$GITHUB_ACTOR" \
+            '. + {
+              pipeline: {
+                run_id: $run_id,
+                run_number: $run_number,
+                workflow: $workflow,
+                repo: $repo,
+                branch: $branch,
+                commit_sha: $commit_sha,
+                actor: $actor
+              },
+              scan_type: "trivy"
+            }' trivy-results.json > final-trivy.json
 
       # 5. The Magic Handoff: Send the file to your local backend
       - name: Stream Results to Local Backend
