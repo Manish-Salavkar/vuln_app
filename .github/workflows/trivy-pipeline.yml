@@ -34,10 +34,26 @@ jobs:
           ignore-unfixed: false
           severity: 'LOW,MEDIUM,CRITICAL,HIGH'
 
-      # 4. The Magic Handoff: Send the file to your local backend
+      # 5. Inject Pipeline Metadata (CRITICAL STEP)
+      - name: Add Pipeline Metadata to Trivy JSON
+        run: |
+          jq '. + {
+            pipeline: {
+              run_id: "'$GITHUB_RUN_ID'",
+              run_number: "'$GITHUB_RUN_NUMBER'",
+              workflow: "'$GITHUB_WORKFLOW'",
+              repo: "'$GITHUB_REPOSITORY'",
+              branch: "'$GITHUB_REF_NAME'",
+              commit_sha: "'$GITHUB_SHA'",
+              actor: "'$GITHUB_ACTOR'"
+            },
+            scan_type: "trivy"
+          }' trivy-results.json > final-trivy.json
+
+      # 5. The Magic Handoff: Send the file to your local backend
       - name: Stream Results to Local Backend
         run: |
           curl -X POST \
           -H "Content-Type: application/json" \
-          -d @trivy-results.json \
+          -d @final-trivy.json \
           ${{ secrets.BACKEND_URL }}
