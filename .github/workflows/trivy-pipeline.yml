@@ -22,7 +22,7 @@ jobs:
         with:
           args: >
            -Dsonar.projectKey=${{ secrets.sonar_project_key }}
-           -Dsonar.projectVersion=${{ github.run_id }}
+           -Dsonar.analysis.runId=${{ github.run_id }}
 
       # 2. Build your FastAPI Docker image (just like you did locally)
       - name: Build Docker Image
