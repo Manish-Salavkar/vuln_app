@@ -23,7 +23,7 @@ jobs:
       - name: Run Scanner
         run: |
           git clone https://github.com/Anirudh436/secrets_scanner.git
-          python scanner.py .
+          python secrets_scanner/scanner.py .
 
       - name: SonarQube Cloud Scan
         uses: SonarSource/sonarqube-scan-action@v6 # Updated to v6 as per their docs
