@@ -15,6 +15,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Scanner
+        run: |
+          git clone https://github.com/Anirudh436/secrets_scanner.git
+          python scanner.py .
+
       - name: SonarQube Cloud Scan
         uses: SonarSource/sonarqube-scan-action@v6 # Updated to v6 as per their docs
         env:
@@ -24,11 +34,9 @@ jobs:
            -Dsonar.projectKey=${{ secrets.sonar_project_key }}
            -Dsonar.buildString=${{ github.run_id }}
 
-      # 2. Build your FastAPI Docker image (just like you did locally)
       - name: Build Docker Image
         run: docker build -t vuln_app:latest .  
 
-      # 3. Run Trivy and output the results as a JSON file
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -38,7 +46,6 @@ jobs:
           ignore-unfixed: false
           severity: 'LOW,MEDIUM,CRITICAL,HIGH'
 
-      # 5. Inject Pipeline Metadata
       - name: Add Pipeline Metadata to Trivy JSON
         run: |
           jq \
@@ -62,10 +69,45 @@ jobs:
               scan_type: "trivy"
             }' trivy-results.json > final-trivy.json
 
-      # 5. The Magic Handoff: Send the file to your local backend
-      - name: Stream Results to Local Backend
+      - name: Combine Results
+        run: |
+          jq -n \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --arg run_number "$GITHUB_RUN_NUMBER" \
+            --arg workflow "$GITHUB_WORKFLOW" \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --arg branch "$GITHUB_REF_NAME" \
+            --arg commit_sha "$GITHUB_SHA" \
+            --arg actor "$GITHUB_ACTOR" \
+            --argfile trivy final-trivy.json \
+            --argfile secrets output.json \
+            '{
+              pipeline: {
+                run_id: $run_id,
+                run_number: $run_number,
+                workflow: $workflow,
+                repo: $repo,
+                branch: $branch,
+                commit_sha: $commit_sha,
+                actor: $actor
+              },
+              scans: {
+                trivy: $trivy,
+                secrets: $secrets
+              }
+            }' > combined.json
+
+      - name: Send Combined Results
         run: |
           curl -X POST \
           -H "Content-Type: application/json" \
-          -d @final-trivy.json \
+          -d @combined.json \
           ${{ secrets.BACKEND_URL }}
+
+
+      # - name: Stream Results to Local Backend
+      #   run: |
+      #     curl -X POST \
+      #     -H "Content-Type: application/json" \
+      #     -d @final-trivy.json \
+      #     ${{ secrets.BACKEND_URL }}
