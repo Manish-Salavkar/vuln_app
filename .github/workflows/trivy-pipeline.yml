@@ -79,8 +79,8 @@ jobs:
             --arg branch "$GITHUB_REF_NAME" \
             --arg commit_sha "$GITHUB_SHA" \
             --arg actor "$GITHUB_ACTOR" \
-            --argfile trivy final-trivy.json \
-            --argfile secrets output.json \
+            --slurpfile trivy final-trivy.json \
+            --slurpfile secrets output.json \
             '{
               pipeline: {
                 run_id: $run_id,
@@ -92,8 +92,8 @@ jobs:
                 actor: $actor
               },
               scans: {
-                trivy: $trivy,
-                secrets: $secrets
+                trivy: $trivy[0],
+                secrets: $secrets[0]
               }
             }' > combined.json
 
