@@ -1,7 +1,8 @@
-// 🔴 DOM XSS
 const params = new URLSearchParams(window.location.search);
 const q = params.get("q");
 
+const output = document.getElementById("output");
+
 if (q) {
-    document.getElementById("output").innerHTML = q;  // Dangerous
+    output.textContent = `You searched for: ${q}`;
 }

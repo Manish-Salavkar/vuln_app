@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Vulnerable App</title>
+    <title>Secure App</title>
+
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'">
 </head>
 <body>
     <h1>Welcome</h1>
 
-    <!-- 🔴 Reflected XSS -->
-    <form action="/search">
-        <input type="text" name="q" />
+    <form action="/search" method="GET">
+        <input type="text" name="q" id="searchInput" maxlength="100" />
         <button type="submit">Search</button>
     </form>
 
