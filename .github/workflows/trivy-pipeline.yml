@@ -3,7 +3,7 @@ name: DevSecOps Pipeline - Trivy
 # This triggers the pipeline every time you push to the 'main' branch
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "secure" ]
 
 jobs:
   build-and-scan:
