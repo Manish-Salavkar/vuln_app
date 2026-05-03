@@ -45,7 +45,6 @@ CREATE TABLE IF NOT EXISTS users (
 """)
 conn.commit()
 
-
 # -------------------------
 # HOME
 # -------------------------
@@ -56,9 +55,14 @@ def home():
 
 
 # -------------------------
-# SECURE LOGIN (no SQL injection)
+# SECURE LOGIN
 # -------------------------
-@app.get("/login")
+@app.get(
+    "/login",
+    responses={
+        401: {"description": "Invalid credentials"}
+    }
+)
 def login(username: str, password: str):
 
     cursor.execute(
@@ -79,12 +83,16 @@ def login(username: str, password: str):
 
 
 # -------------------------
-# SECURE COMMAND EXECUTION (no OS injection)
+# SECURE COMMAND EXECUTION
 # -------------------------
-@app.get("/ping")
+@app.get(
+    "/ping",
+    responses={
+        400: {"description": "Invalid host"}
+    }
+)
 def ping(host: str):
 
-    # allow only safe hosts (basic allowlist)
     allowed_hosts = ["127.0.0.1", "localhost"]
 
     if host not in allowed_hosts:
@@ -95,9 +103,15 @@ def ping(host: str):
 
 
 # -------------------------
-# SECURE FILE ACCESS (no path traversal)
+# SECURE FILE ACCESS
 # -------------------------
-@app.get("/read-file")
+@app.get(
+    "/read-file",
+    responses={
+        400: {"description": "Invalid file path"},
+        404: {"description": "File not found"}
+    }
+)
 def read_file(filename: str):
 
     base_dir = os.path.abspath("files")
@@ -114,54 +128,78 @@ def read_file(filename: str):
 
 
 # -------------------------
-# SECURE DESERIALIZATION (remove pickle)
+# SECURE DESERIALIZATION
 # -------------------------
-@app.post("/deserialize")
+@app.post(
+    "/deserialize",
+    responses={
+        400: {"description": "Unsafe operation disabled"}
+    }
+)
 async def deserialize(request: Request):
-    # NEVER use pickle on user input
     raise HTTPException(status_code=400, detail="Unsafe operation disabled")
 
 
 # -------------------------
-# SECURE HASHING (replace MD5)
+# SECURE HASHING
 # -------------------------
 @app.get("/hash")
 def hash_password(password: str):
-
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode(), salt)
-
     return {"hash": hashed.decode()}
 
 
 # -------------------------
-# SECURE SSRF (allowlist URLs)
+# SECURE SSRF
 # -------------------------
-@app.get("/fetch")
-def fetch(url: str):
+# -------------------------
+# SECURE SSRF (no user-controlled path)
+# -------------------------
+@app.get(
+    "/fetch",
+    responses={
+        400: {"description": "Invalid endpoint"}
+    }
+)
+def fetch(endpoint: str):
 
-    allowed_domains = ["api.github.com", "example.com"]
+    base_url = "https://api.github.com"
 
-    parsed = urlparse(url)
+    # strict allowlist of API paths
+    allowed_endpoints = {
+        "users": "/users",
+        "repos": "/repositories"
+    }
 
-    if parsed.hostname not in allowed_domains:
-        raise HTTPException(status_code=400, detail="Blocked URL")
+    if endpoint not in allowed_endpoints:
+        raise HTTPException(status_code=400, detail="Invalid endpoint")
+
+    url = base_url + allowed_endpoints[endpoint]
 
     response = requests.get(url, timeout=5)
+
     return {"status": response.status_code}
 
 
 # -------------------------
-# SECURE REDIRECT (allowlist)
+# SECURE REDIRECT
 # -------------------------
-@app.get("/redirect")
-def redirect(url: str):
+@app.get(
+    "/redirect",
+    responses={
+        400: {"description": "Invalid redirect target"}
+    }
+)
+def redirect(target: str):
 
-    allowed_paths = ["/home", "/dashboard"]
+    # internal mapping only
+    allowed_redirects = {
+        "home": "/home",
+        "dashboard": "/dashboard"
+    }
 
-    parsed = urlparse(url)
+    if target not in allowed_redirects:
+        raise HTTPException(status_code=400, detail="Invalid redirect target")
 
-    if parsed.path not in allowed_paths:
-        raise HTTPException(status_code=400, detail="Invalid redirect")
-
-    return RedirectResponse(url=url)
+    return RedirectResponse(url=allowed_redirects[target])
