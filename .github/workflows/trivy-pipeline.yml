@@ -23,6 +23,7 @@ jobs:
       - name: Run Scanner
         run: |
           git clone https://github.com/Anirudh436/secrets_scanner.git /tmp/secrets_scanner
+          OUTPUT_FILE=$GITHUB_WORKSPACE/output.json \
           python /tmp/secrets_scanner/scanner.py .
 
       - name: SonarQube Cloud Scan
