@@ -29,10 +29,11 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-
-conn = sqlite3.connect("users.db", check_same_thread=False)
+DB_PATH = os.getenv("DB_PATH", "users.db")
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 cursor = conn.cursor()
 
+cursor.execute("DROP TABLE IF EXISTS users")
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
