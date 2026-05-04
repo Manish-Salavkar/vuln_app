@@ -8,6 +8,7 @@ import requests
 import bcrypt
 from urllib.parse import urlparse
 from dotenv import load_dotenv
+import subprocess
 
 load_dotenv()
 
@@ -86,7 +87,8 @@ def ping(host: str):
     if host not in allowed_hosts:
         raise HTTPException(status_code=400, detail="Invalid host")
 
-    os.system(f"ping -c 1 {host}")
+    
+    subprocess.run(["ping", "-c", "1", host], check=True)
     return {"message": "Ping executed safely"}
 
 

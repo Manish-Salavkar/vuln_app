@@ -9,7 +9,6 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-latest
     steps:
-      # 1. Pull your code into the GitHub runner
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
@@ -19,6 +18,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run Tests with Coverage
+        run: |
+          pytest --cov=main --cov-report=xml
 
       - name: Run Scanner
         run: |
@@ -34,6 +43,7 @@ jobs:
           args: >
            -Dsonar.projectKey=${{ secrets.sonar_project_key }}
            -Dsonar.buildString=${{ github.run_id }}
+           -Dsonar.python.coverage.reportPaths=coverage.xml
 
       - name: Build Docker Image
         run: docker build -t vuln_app:latest .  
