@@ -27,6 +27,7 @@ jobs:
 
       - name: Run Tests with Coverage
         run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
           pytest --cov=main --cov-report=xml
 
       - name: Run Scanner
