@@ -15,9 +15,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 app = FastAPI(debug=False)
 
-# -------------------------
-# SECURE CORS CONFIG
-# -------------------------
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -30,9 +28,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-# -------------------------
-# DATABASE (secure schema)
-# -------------------------
+
 conn = sqlite3.connect("users.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -45,18 +41,13 @@ CREATE TABLE IF NOT EXISTS users (
 """)
 conn.commit()
 
-# -------------------------
-# HOME
-# -------------------------
+
 @app.get("/", response_class=HTMLResponse)
 def home():
     with open("templates/index.html", "r", encoding="utf-8") as f:
         return f.read()
 
 
-# -------------------------
-# SECURE LOGIN
-# -------------------------
 @app.get(
     "/login",
     responses={
@@ -82,9 +73,6 @@ def login(username: str, password: str):
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
-# -------------------------
-# SECURE COMMAND EXECUTION
-# -------------------------
 @app.get(
     "/ping",
     responses={
@@ -102,9 +90,6 @@ def ping(host: str):
     return {"message": "Ping executed safely"}
 
 
-# -------------------------
-# SECURE FILE ACCESS
-# -------------------------
 @app.get(
     "/read-file",
     responses={
@@ -127,9 +112,6 @@ def read_file(filename: str):
         return {"content": f.read()}
 
 
-# -------------------------
-# SECURE DESERIALIZATION
-# -------------------------
 @app.post(
     "/deserialize",
     responses={
@@ -140,9 +122,6 @@ async def deserialize(request: Request):
     raise HTTPException(status_code=400, detail="Unsafe operation disabled")
 
 
-# -------------------------
-# SECURE HASHING
-# -------------------------
 @app.get("/hash")
 def hash_password(password: str):
     salt = bcrypt.gensalt()
@@ -150,12 +129,6 @@ def hash_password(password: str):
     return {"hash": hashed.decode()}
 
 
-# -------------------------
-# SECURE SSRF
-# -------------------------
-# -------------------------
-# SECURE SSRF (no user-controlled path)
-# -------------------------
 @app.get(
     "/fetch",
     responses={
@@ -166,7 +139,6 @@ def fetch(endpoint: str):
 
     base_url = "https://api.github.com"
 
-    # strict allowlist of API paths
     allowed_endpoints = {
         "users": "/users",
         "repos": "/repositories"
@@ -181,10 +153,6 @@ def fetch(endpoint: str):
 
     return {"status": response.status_code}
 
-
-# -------------------------
-# SECURE REDIRECT
-# -------------------------
 @app.get(
     "/redirect",
     responses={
@@ -193,7 +161,6 @@ def fetch(endpoint: str):
 )
 def redirect(target: str):
 
-    # internal mapping only
     allowed_redirects = {
         "home": "/home",
         "dashboard": "/dashboard"
