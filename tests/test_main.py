@@ -63,3 +63,70 @@ def test_redirect_invalid():
 def test_deserialize_disabled():
     response = client.post("/deserialize")
     assert response.status_code == 400
+
+
+def test_login_success():
+    import bcrypt
+    from main import cursor, conn
+
+    password = "validpass"
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+    cursor.execute(
+        "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+        ("testuser", hashed)
+    )
+    conn.commit()
+
+    response = client.get("/login?username=testuser&password=validpass")
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+
+
+def test_login_wrong_password():
+    import bcrypt
+    from main import cursor, conn
+
+    password = "correct"
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+    cursor.execute(
+        "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+        ("user2", hashed)
+    )
+    conn.commit()
+
+    response = client.get("/login?username=user2&password=wrong")
+    assert response.status_code == 401
+
+
+def test_read_file_valid():
+    import os
+
+    os.makedirs("files", exist_ok=True)
+    with open("files/test.txt", "w") as f:
+        f.write("hello")
+
+    response = client.get("/read-file?filename=test.txt")
+    assert response.status_code == 200
+    assert response.json()["content"] == "hello"
+
+
+def test_fetch_repos():
+    response = client.get("/fetch?endpoint=repos")
+    assert response.status_code == 200
+    assert "status" in response.json()
+
+
+def test_hash_password_different_each_time():
+    r1 = client.get("/hash?password=test_input")
+    r2 = client.get("/hash?password=test_input")
+
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+    assert r1.json()["hash"] != r2.json()["hash"]
+
+
+def test_redirect_dashboard():
+    response = client.get("/redirect?target=dashboard", allow_redirects=False)
+    assert response.status_code in (200, 307)
