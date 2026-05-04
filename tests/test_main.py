@@ -51,7 +51,7 @@ def test_fetch_invalid():
 
 
 def test_redirect_valid():
-    response = client.get("/redirect?target=home", allow_redirects=False)
+    response = client.get("/redirect?target=home")
     assert response.status_code in (200, 307)
 
 
